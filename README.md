@@ -35,11 +35,3 @@ A full-stack **Notes Application** built with the MERN stack (MongoDB, Express, 
 - **Development Tools:**  
   VS Code, Postman, Git
 
-## Installation
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/your-username/mern-notes-app.git
-   cd mern-notes-app
-   ```
