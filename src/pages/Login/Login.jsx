@@ -9,6 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -24,8 +25,8 @@ const Login = () => {
       return;
     }
 
-    setError(" ");
-    // Login API Call From Backend
+    setError("");
+    setIsLoading(true);
 
     try {
       const response = await axiosInstance.post("users/login", {
@@ -34,20 +35,20 @@ const Login = () => {
       });
       if (response.data && response.data.accessToken) {
         localStorage.setItem("token", response.data.accessToken);
-        navigate("/dashboard  ");
+        navigate("/dashboard");
       }
     } catch (error) {
-      // Handle login error
-
       if (
         error.response &&
-        error.response.data.message &&
-        error.response.data
+        error.response.data &&
+        error.response.data.message
       ) {
         setError(error.response.data.message);
       } else {
-        setError("An unexpected error occurred. Please try again. ");
+        setError("An unexpected error occurred. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -55,37 +56,64 @@ const Login = () => {
     <>
       <Navbar />
 
-      <div className="flex items-center justify-center mt-28">
-        <div className=" w-96 border rounded bg-white px-7 py-10">
-          <form onSubmit={handleLogin}>
-            <h4 className="text-2xl mb-7">Login</h4>
-
-            <input
-              className="input-box"
-              placeholder="Email"
-              type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <PasswordInput
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-
-            {error && <p className="text-red-500 text-xs pb-1">{error} </p>}
-
-            <button className="btn btn-primary" type="submit">
-              Login
-            </button>
-
-            <p className="text-sm text-center mt-4 ">
-              Not Registered yet?{" "}
-              <Link to="/signup" className="font-medium text-primary underline">
-                Create an Account.
-              </Link>
+      <div className="min-h-[calc(100vh-60px)] flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-dark-bg dark:via-slate-900 dark:to-dark-bg px-4">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+              Welcome Back
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-dark-muted mt-2">
+              Sign in to access your notes
             </p>
-          </form>
+          </div>
+
+          <div className="bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-2xl shadow-xl dark:shadow-2xl px-8 py-10">
+            <form onSubmit={handleLogin}>
+              <input
+                className="input-box"
+                placeholder="Email"
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <PasswordInput
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              {error && (
+                <p className="text-red-500 text-xs pb-3 animate-fade-in">
+                  {error}
+                </p>
+              )}
+
+              <button
+                className="btn-primary py-3 mt-2"
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Logging in...
+                  </span>
+                ) : (
+                  "Login"
+                )}
+              </button>
+
+              <p className="text-sm text-center mt-6 text-slate-500 dark:text-dark-muted">
+                Not Registered yet?{" "}
+                <Link
+                  to="/signup"
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Create an Account
+                </Link>
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     </>
