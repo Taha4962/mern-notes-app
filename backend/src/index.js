@@ -26,10 +26,24 @@ app.use(express.json());
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// CORS
+// CORS — allow multiple origins for local + production
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl, etc)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
   })
 );
 
@@ -63,6 +77,11 @@ app.use("/api/v1/notes/", notesRoutes);
 // Health check endpoint
 app.get("/api/v1/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running." });
+});
+
+// Root endpoint
+app.get("/", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Notes API v2.0" });
 });
 
 // Global error handling middleware

@@ -1,14 +1,21 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Ensure upload directories exist (important for Render/production)
+const avatarDir = path.join(__dirname, "../uploads/avatars");
+const noteDir = path.join(__dirname, "../uploads/notes");
+fs.mkdirSync(avatarDir, { recursive: true });
+fs.mkdirSync(noteDir, { recursive: true });
+
 // Avatar storage
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads/avatars"));
+    cb(null, avatarDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -19,7 +26,7 @@ const avatarStorage = multer.diskStorage({
 // Note image storage
 const noteImageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads/notes"));
+    cb(null, noteDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);

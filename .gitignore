@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 README.me
+
+# Environment files
+.env
+*.env.local
+
+# Upload contents (keep dirs via .gitkeep)
+backend/uploads/avatars/*
+backend/uploads/notes/*
+!backend/uploads/avatars/.gitkeep
+!backend/uploads/notes/.gitkeep
