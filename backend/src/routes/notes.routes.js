@@ -1,22 +1,26 @@
+import express from "express";
+import { authenticationToken } from "../utilities.js";
+import { uploadNoteImage } from "../upload.js";
 import {
   addNote,
-  deleteNote,
   editNote,
   getAllNotes,
+  deleteNote,
   pinnedNote,
   searchNote,
+  getNotesWithFilters,
+  getNoteStats,
 } from "../controllers/note.controllers.js";
-import { authenticationToken } from "../utilities.js";
-import express from "express";
 
-const router = express.Router();
+const notesRouter = express.Router();
 
-// Note requests API
-router.post("/add-note", authenticationToken, addNote);
-router.patch("/edit-note/:noteId", authenticationToken, editNote);
-router.get("/get-all-notes", authenticationToken, getAllNotes);
-router.delete("/delete-note/:noteId", authenticationToken, deleteNote);
-router.patch("/update-note-pinned/:noteId", authenticationToken, pinnedNote);
-router.get("/search-note", authenticationToken, searchNote);
+notesRouter.post("/add-note", authenticationToken, uploadNoteImage, addNote);
+notesRouter.patch("/edit-note/:noteId", authenticationToken, uploadNoteImage, editNote);
+notesRouter.get("/get-all-notes", authenticationToken, getAllNotes);
+notesRouter.delete("/delete-note/:noteId", authenticationToken, deleteNote);
+notesRouter.patch("/update-note-pinned/:noteId", authenticationToken, pinnedNote);
+notesRouter.get("/search-note", authenticationToken, searchNote);
+notesRouter.get("/filter-notes", authenticationToken, getNotesWithFilters);
+notesRouter.get("/note-stats", authenticationToken, getNoteStats);
 
-export default router;
+export default notesRouter;

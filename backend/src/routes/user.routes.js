@@ -1,16 +1,18 @@
 import express from "express";
-import {
-  getUser,
-  loginUser,
-  registerUser,
-} from "../controllers/user.controllers.js";
 import { authenticationToken } from "../utilities.js";
+import { uploadAvatar } from "../upload.js";
+import {
+  registerUser,
+  loginUser,
+  getUser,
+  updateAvatar,
+} from "../controllers/user.controllers.js";
 
-const router = express.Router();
+const UserRoutes = express.Router();
 
-// Auth requests API
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.get("/get-user", authenticationToken, getUser);
+UserRoutes.post("/register", registerUser);
+UserRoutes.post("/login", loginUser);
+UserRoutes.get("/get-user", authenticationToken, getUser);
+UserRoutes.put("/update-avatar", authenticationToken, uploadAvatar, updateAvatar);
 
-export default router;
+export default UserRoutes;

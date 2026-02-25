@@ -1,10 +1,10 @@
 import { Note } from "../models/notes.models.js";
-export const addNote = async (req, res) => {
-  const { title, content, tags } = req.body;
-  // Adjust destructuring based on how req.user is set by your auth middleware
-  const { user } = req.user; // or simply: const user = req.user;
 
-  // Validate that the required fields are provided (title and content)
+export const addNote = async (req, res) => {
+  const { title, content, tags, priority, category, status, dueDate, color } =
+    req.body;
+  const { user } = req.user;
+
   if (!title || !content) {
     return res
       .status(400)
@@ -12,96 +12,75 @@ export const addNote = async (req, res) => {
   }
 
   try {
-    const note = await Note.create({
+    const noteData = {
       title,
       content,
-      tags,
+      tags: tags || [],
       userId: user._id,
-    });
-    console.log(note);
+      priority: priority || "low",
+      category: category || "personal",
+      status: status || "todo",
+      dueDate: dueDate || null,
+      color: color || "#ffffff",
+    };
+
+    // If an image was uploaded via multer
+    if (req.file) {
+      noteData.image = `/uploads/notes/${req.file.filename}`;
+    }
+
+    const note = await Note.create(noteData);
 
     return res
-      .status(200)
+      .status(201)
       .json({ error: false, note, message: "Note added successfully." });
   } catch (error) {
     return res
       .status(500)
-      .json({ error: true, message: "Internal Server Issue.", error });
+      .json({ error: true, message: "Internal Server Issue." });
   }
-}; // controller for adding the notes in the user fetching data.
-
-// export const editNote = async (req, res) => {
-//   const noteId = req.params.noteId;
-//   const { title, content, tags } = req.body;
-//   const { user } = req.user;
-//   console.log("Id of the note : ", noteId);
-//   console.log("the id of the user : ", user._id);
-
-//   if (!(title && content && tags)) {
-//     return res
-//       .status(404)
-//       .json({ error: true, message: "Please enter the required fields." });
-//   }
-//   try {
-//     const note = await Note.findOne({ _id: noteId, userId: user._id });
-//     console.log(note);
-
-//     if (!note) {
-//       return res.status(404).json({ error: true, message: "Note not found." });
-//     }
-//     if (title) note.title = title;
-//     if (content) note.content = content;
-//     if (tags) note.tags = tags;
-
-//     await note.save();
-
-//     return res.status(200).json({
-//       error: false,
-//       message: "Note is updated successfully.",
-//       error,
-//       note,
-//     }); // Giving response when the note is successfully updated.
-//   } catch (error) {
-//     console.error("Error updating note:", error);
-//     return res.status(500).json({ error: true, message: error.message });
-//   } // when the note is not updated through the server.
-// }; //controller for the editting the notes.
+};
 
 export const editNote = async (req, res) => {
   const noteId = req.params.noteId;
-
-  const { title, content, tags } = req.body;
-  const { user } = req.user; // Accessing the user directly
-  // console.log("The id of the user:---76 ", user);
-
-  if (!(title && content && tags)) {
-    return res
-      .status(404)
-      .json({ error: true, message: "Please enter the required fields." });
-  }
+  const { title, content, tags, priority, category, status, dueDate, color, removeImage } =
+    req.body;
+  const { user } = req.user;
 
   try {
     const note = await Note.findOne({ _id: noteId, userId: user?._id });
-    console.log(note);
 
     if (!note) {
       return res.status(404).json({ error: true, message: "Note not found." });
     }
 
-    // Update fields only if they are provided
-    if (title) note.title = title;
-    if (content) note.content = content;
-    if (tags) note.tags = tags;
+    if (title !== undefined) note.title = title;
+    if (content !== undefined) note.content = content;
+    if (tags !== undefined) note.tags = tags;
+    if (priority !== undefined) note.priority = priority;
+    if (category !== undefined) note.category = category;
+    if (status !== undefined) note.status = status;
+    if (dueDate !== undefined) note.dueDate = dueDate;
+    if (color !== undefined) note.color = color;
+
+    // Handle image upload
+    if (req.file) {
+      note.image = `/uploads/notes/${req.file.filename}`;
+    }
+
+    // Handle image removal
+    if (removeImage === "true" || removeImage === true) {
+      note.image = null;
+    }
 
     await note.save();
 
     return res.status(200).json({
       error: false,
-      message: "Note is updated successfully.",
+      message: "Note updated successfully.",
       note,
     });
   } catch (error) {
-    console.error("Error updating note:", error);
     return res.status(500).json({ error: true, message: error.message });
   }
 };
@@ -112,6 +91,7 @@ export const getAllNotes = async (req, res) => {
   try {
     const notes = await Note.find({ userId: user._id }).sort({
       isPinned: -1,
+      createdAt: -1,
     });
     return res.status(200).json({
       error: false,
@@ -121,41 +101,42 @@ export const getAllNotes = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ error: true, message: "Internal sever issue." });
+      .json({ error: true, message: "Internal server issue." });
   }
-}; // controller for retrieving the notes from the user.
+};
 
 export const deleteNote = async (req, res) => {
   const { user } = req.user;
   const noteId = req.params.noteId;
+
   try {
     const note = await Note.findOne({ _id: noteId, userId: user._id });
 
     if (!note) {
       return res
         .status(404)
-        .json({ error: true, message: "Note is not found." });
+        .json({ error: true, message: "Note not found." });
     }
+
     const delNote = await Note.deleteOne({ _id: noteId, userId: user._id });
 
     return res.status(200).json({
       error: false,
       delNote,
-      message: "Note is deleted successfully.",
+      message: "Note deleted successfully.",
     });
   } catch (error) {
     return res
       .status(500)
       .json({ error: true, message: "Internal server issue." });
   }
-}; // controller for deleting the specific note in the user's note's collection.
+};
 
 export const pinnedNote = async (req, res) => {
   const noteId = req.params.noteId;
   const { isPinned } = req.body;
   const { user } = req.user;
 
-  // Check if isPinned is provided (can be true or false)
   if (isPinned === undefined) {
     return res.status(400).json({
       error: true,
@@ -173,9 +154,7 @@ export const pinnedNote = async (req, res) => {
       });
     }
 
-    // Update isPinned directly
     note.isPinned = isPinned;
-
     await note.save();
 
     return res.status(200).json({
@@ -188,7 +167,7 @@ export const pinnedNote = async (req, res) => {
       .status(500)
       .json({ error: true, message: "Internal server issue." });
   }
-}; // controller for getting pinned notes.
+};
 
 export const searchNote = async (req, res) => {
   const { user } = req.user;
@@ -196,9 +175,10 @@ export const searchNote = async (req, res) => {
 
   if (!query) {
     return res
-      .status(404)
+      .status(400)
       .json({ error: true, message: "Search query is required." });
   }
+
   try {
     const matchNotes = await Note.find({
       userId: user._id,
@@ -207,14 +187,106 @@ export const searchNote = async (req, res) => {
         { content: { $regex: new RegExp(query, "i") } },
       ],
     });
+
     return res.status(200).json({
       error: false,
       notes: matchNotes,
-      message: "Notes matching the search query retireved successfully.",
+      message: "Notes matching the search query retrieved successfully.",
     });
   } catch (error) {
     return res
       .status(500)
       .json({ error: true, message: "Internal server error." });
   }
-}; // controller for searching the notes.
+};
+
+// Filter notes by priority, category, status
+export const getNotesWithFilters = async (req, res) => {
+  const { user } = req.user;
+  const { priority, category, status, sort } = req.query;
+
+  try {
+    const filter = { userId: user._id };
+    if (priority) filter.priority = priority;
+    if (category) filter.category = category;
+    if (status) filter.status = status;
+
+    // Sort options
+    let sortOption = { isPinned: -1, createdAt: -1 };
+    if (sort === "priority") {
+      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+      // We'll sort in memory since MongoDB doesn't support enum ordering natively
+      sortOption = { isPinned: -1, createdAt: -1 };
+    } else if (sort === "dueDate") {
+      sortOption = { isPinned: -1, dueDate: 1 };
+    } else if (sort === "title") {
+      sortOption = { isPinned: -1, title: 1 };
+    }
+
+    let notes = await Note.find(filter).sort(sortOption);
+
+    // Custom priority sort (in memory)
+    if (sort === "priority") {
+      const priorityWeight = { urgent: 0, high: 1, medium: 2, low: 3 };
+      notes = notes.sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
+        return (priorityWeight[a.priority] || 3) - (priorityWeight[b.priority] || 3);
+      });
+    }
+
+    return res.status(200).json({
+      error: false,
+      notes,
+      message: "Filtered notes retrieved successfully.",
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: true, message: "Internal server error." });
+  }
+};
+
+// Get note stats (counts by priority and status)
+export const getNoteStats = async (req, res) => {
+  const { user } = req.user;
+
+  try {
+    const notes = await Note.find({ userId: user._id });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const stats = {
+      total: notes.length,
+      byPriority: {
+        low: notes.filter((n) => n.priority === "low").length,
+        medium: notes.filter((n) => n.priority === "medium").length,
+        high: notes.filter((n) => n.priority === "high").length,
+        urgent: notes.filter((n) => n.priority === "urgent").length,
+      },
+      byStatus: {
+        todo: notes.filter((n) => n.status === "todo").length,
+        "in-progress": notes.filter((n) => n.status === "in-progress").length,
+        done: notes.filter((n) => n.status === "done").length,
+      },
+      dueToday: notes.filter(
+        (n) => n.dueDate && new Date(n.dueDate) >= now && new Date(n.dueDate) < tomorrow
+      ).length,
+      overdue: notes.filter(
+        (n) => n.dueDate && new Date(n.dueDate) < now && n.status !== "done"
+      ).length,
+    };
+
+    return res.status(200).json({
+      error: false,
+      stats,
+      message: "Note stats retrieved successfully.",
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: true, message: "Internal server error." });
+  }
+};
